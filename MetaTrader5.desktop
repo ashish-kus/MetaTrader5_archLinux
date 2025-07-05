@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=MetaTrader 5
-Comment=Launch MetaTrader 5 trading platform using wine
-Exec=env WINEPREFIX=/home/$USER/.mt5 wine "/home/$USER/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe"
-Icon=metatrader5
-Terminal=false
-Type=Application
-Categories=Finance;Trading;Application;
-StartupNotify=true

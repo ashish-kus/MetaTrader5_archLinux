@@ -2,6 +2,8 @@
 
 > A fully automated bash script to install **MetaTrader 5** (MT5) on Arch Linux using **Wine Staging**.
 
+![After Install Screenshot](./assets/metaTrader5ScriptBG.png)
+
 ## ⚠️ Warning: Uses Wine-Staging
 
 This script uses `wine-staging`, the **experimental** branch of Wine. It includes bleeding-edge patches that may offer **better compatibility** but **may also cause instability**. Use with caution if you rely on a stable Wine environment.

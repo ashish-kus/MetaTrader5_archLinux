@@ -76,19 +76,22 @@ setup_wine() {
 
 # --- Download Installers ---
 download_files() {
+  BUILD_DIR="./build"
+
   # Create the build directory if it doesn't exist
+  mkdir -p "$BUILD_DIR"
 
   info "Downloading MetaTrader 5..."
-  if wget -q "$MT5_URL" -O "./mt5setup.exe"; then
-    success "MT5 downloaded to ./"
+  if wget -q "$MT5_URL" -O "$BUILD_DIR/mt5setup.exe"; then
+    success "MT5 downloaded to $BUILD_DIR."
   else
     error "Failed to download MetaTrader 5."
     exit 1
   fi
 
   info "Downloading WebView2 Runtime..."
-  if wget "$WEBVIEW2_URL" -O "./MicrosoftEdgeWebview2Setup.exe"; then
-    success "WebView2 downloaded to ./"
+  if wget -q "$WEBVIEW2_URL" -O "$BUILD_DIR/MicrosoftEdgeWebview2Setup.exe"; then
+    success "WebView2 downloaded to $BUILD_DIR."
   else
     error "Failed to download WebView2."
     exit 1
@@ -98,7 +101,7 @@ download_files() {
 # --- Install WebView2 ---
 install_webview() {
   info "Installing WebView2..."
-  if WINEPREFIX="$HOME/.mt5" wine "./MicrosoftEdgeWebview2Setup.exe" /install &>/dev/null; then
+  if WINEPREFIX="$HOME/.mt5" wine "$BUILD_DIR/MicrosoftEdgeWebview2Setup.exe" /silent /install &>/dev/null; then
     success "WebView2 installed."
   else
     warn "WebView2 installation might have failed. Proceeding anyway."
@@ -107,17 +110,59 @@ install_webview() {
 
 install_mt5() {
   info "Launching MetaTrader 5 Installer..."
-  WINEPREFIX="$HOME/.mt5" wine "./mt5setup.exe" &>/dev/null
+  WINEPREFIX="$HOME/.mt5" wine "$BUILD_DIR/mt5setup.exe" &>/dev/null
   success "MetaTrader 5 setup launched. Complete the installation in the GUI window."
 }
 
+setup_dotDesktop() {
+  wine_desktop="$HOME/.local/share/applications/wine/Programs/MetaTrader 5/MetaTrader 5.desktop"
+  manual_desktop="$HOME/.local/share/applications/metatrader5.desktop"
+  icon_source="./MetaTrader5.png"
+  icon_target="$HOME/.local/share/icons/MetaTrader5.png"
+
+  # --- Copy icon if needed ---
+  if [[ -f "$icon_source" ]]; then
+    mkdir -p "$(dirname "$icon_target")"
+    cp "$icon_source" "$icon_target"
+    success "Icon copied to: $icon_target"
+  else
+    warn "Icon not found: $icon_source. Default system icon will be used."
+  fi
+
+  # --- Create or Verify Desktop Entry ---
+  if [[ -f "$wine_desktop" ]]; then
+    success "Auto-generated desktop entry found at: $wine_desktop"
+  elif [[ -f "$manual_desktop" ]]; then
+    info "Manual desktop entry already exists at: $manual_desktop"
+  else
+    info "No desktop entry found. Creating one manually..."
+    cat >"$manual_desktop" <<EOF
+[Desktop Entry]
+Name=MetaTrader 5
+Comment=Launch MetaTrader 5 using Wine
+Exec=env WINEPREFIX=$HOME/.mt5 wine "$HOME/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+Icon=metatrader5
+Terminal=false
+Type=Application
+Categories=Finance;Trading;Application;
+StartupNotify=true
+EOF
+
+    chmod +x "$manual_desktop"
+    success "Manual desktop launcher created: $manual_desktop"
+  fi
+}
+
 # --- Run the Script ---
+check_sudo
 check_network
+confirm_installation
 install_dependencies
 setup_wine
 download_files
 install_webview
 install_mt5
+setup_dotDesktop
 
 success "MetaTrader 5 installation script completed. You can launch MT5 from the Wine prefix:"
 echo -e "\n${BLUE}Run: WINEPREFIX=\"$HOME/.mt5\" wine \"$HOME/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe\"${RESET}"
